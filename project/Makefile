@@ -1,22 +1,28 @@
-COMMON_OBJECTS  =
-CPU 		= msp430g2553
-CFLAGS 		= -mmcu=${CPU} -I../h -L/opt/ti/msp430_gcc/include
+COMMON_OBJECTS =
+CPU = msp430g2553
+LINKER_SCRIPT = /opt/ti/msp430_gcc/include/${CPU}.ld
 
-CC		= msp430-elf-gcc
-AS		= msp430-elf-as
+CFLAGS = -mmcu=${CPU} -I../demos/timerLib -I../demos/11-buzzer
+LDFLAGS = -L/opt/ti/msp430_gcc/include -T ${LINKER_SCRIPT}
+
+CC = msp430-elf-gcc
+AS = msp430-elf-as
 
 all: buzzer.elf
 
-../../s24-corg-buzzy-blinky-toy-IALT1234/demos/11-buzzer/buzzer.elf: ${COMMON_OBJECTS} buzzer.o main.o ../../s24-corg-buzzy-blinky-toy-IALT1234/demos/lib/libTimer.a
-
-	${CC} ${CFLAGS} -o $@ $^
+buzzer.elf: ${COMMON_OBJECTS} buzzer.o main.o ../../s24-corg-buzzy-blinky-toy-IALT1234/demos/lib/libTimer.a
+	${CC} ${CFLAGS} ${LDFLAGS} -o $@ $^
 
 load: buzzer.elf
-	msp430loader.sh $^
-
-clean: $^
+	mspdebug rf2500 "prog buzzer.elf"
+clean:
 	rm -f *.o *.elf
 
-buzzer.c: ../demos/11-buzzer/buzzer.h 
+buzzer.o: ../demos/11-buzzer/buzzer.c ../demos/11-buzzer/buzzer.h ../demos/timerLib/libTimer.h
+	${CC} ${CFLAGS} -c -o buzzer.o ../demos/11-buzzer/buzzer.c
+main.o: main.c ../demos/11-buzzer/buzzer.h ../demos/timerLib/libTimer.h
+	${CC} ${CFLAGS} -c -o main.o main.c
 
-main.c: ../demos/11-buzzer/buzzer.h 
+../../s24-corg-buzzy-blinky-toy-IALT1234/demos/lib/libTimer.a:
+	cd ../../s24-corg-buzzy-blinky-toy-IALT1234/demos/lib && make
+
